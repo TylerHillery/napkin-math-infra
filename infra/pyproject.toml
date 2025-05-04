@@ -1,0 +1,11 @@
+[project]
+name = "infra"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "jinja2>=3.1.6",
+    "pulumi>=3.167.0",
+    "pulumi-gcp>=8.29.0",
+]

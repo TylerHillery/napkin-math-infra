@@ -1,0 +1,6 @@
+name: napkin-math
+description: Infra for benching common programming operations
+runtime:
+  name: python
+  options:
+    toolchain: uv
