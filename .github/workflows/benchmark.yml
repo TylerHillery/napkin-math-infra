@@ -34,9 +34,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: |
-            export UV_PROJECT_ENVIRONMENT="${pythonLocation}"
-            uv sync --frozen
+        run: uv sync --frozen
 
       - name: Authenticate with Google Cloud
         id: auth
@@ -135,9 +133,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: |
-            export UV_PROJECT_ENVIRONMENT="${pythonLocation}"
-            uv sync --frozen
+        run: uv sync --frozen
 
       - name: Teardown Benchmark Infrastructure
         id: pulumi
