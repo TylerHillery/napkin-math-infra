@@ -97,7 +97,7 @@ def setup_github_oidc(gcp_project_id: int):
 
     gcp_service_account_github_actions_roles = [
         "roles/iam.serviceAccountTokenCreator",
-        "roles/storage.objectViewer",
+        "roles/storage.objectAdmin",
     ]
 
     for role in gcp_service_account_github_actions_roles:

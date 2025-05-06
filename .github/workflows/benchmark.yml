@@ -84,7 +84,7 @@ jobs:
             GSUTIL_OUTPUT=$(gsutil -q stat "${RESULTS_FILE_PATH}" 2>&1)
             GSUTIL_EXIT_CODE=$?
 
-            if [[ $GSUTIL_EXIT_CODE -eq 0 ]]; the
+            if [[ $GSUTIL_EXIT_CODE -eq 0 ]]; then
               echo "Results file found!"
               echo "::set-output name=results_found::true"
               exit 0
