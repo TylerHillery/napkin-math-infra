@@ -79,7 +79,7 @@ def setup_github_oidc(gcp_project_id: int):
         "gcp-iam-workload-identity-pool-provider-github-actions",
         workload_identity_pool_id=gcp_iam_workload_identity_pool_github_actions.workload_identity_pool_id,
         workload_identity_pool_provider_id="github-actions-oidc",
-        attribute_condition=f'attribute.repository == "{settings.GITHUB_USERNAME}/{settings.PROJECT_NAME}"',
+        attribute_condition=f'attribute.repository == "{settings.GITHUB_USERNAME}/{settings.GITHUB_REPO}"',
         attribute_mapping={
             "google.subject": "assertion.sub",
             "attribute.actor": "assertion.actor",
@@ -120,7 +120,7 @@ def setup_github_oidc(gcp_project_id: int):
         role="roles/iam.workloadIdentityUser",
         members=workload_identity_base_path.apply(
             lambda base_path: [
-                f"principalSet://iam.googleapis.com/{base_path}/attribute.repository/{settings.GITHUB_USERNAME}/{settings.PROJECT_NAME}"
+                f"principalSet://iam.googleapis.com/{base_path}/attribute.repository/{settings.GITHUB_USERNAME}/{settings.GITHUB_REPO}"
             ]
         ),
     )
