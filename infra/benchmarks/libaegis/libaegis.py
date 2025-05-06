@@ -18,7 +18,7 @@ def define_resources(shared_stack: pulumi.StackReference):
 
     vm = gcp.compute.Instance(
         f"{settings.STACK_NAME}-vm",
-        machine_type="e2-micro",
+        machine_type="c3-standard-22-lssd",
         zone="us-central1-a",
         boot_disk=gcp.compute.InstanceBootDiskArgs(
             initialize_params=gcp.compute.InstanceBootDiskInitializeParamsArgs(
