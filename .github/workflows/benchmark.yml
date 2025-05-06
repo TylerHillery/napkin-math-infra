@@ -58,13 +58,6 @@ jobs:
           # Use || true to prevent failure if the file doesn't exist
           gcloud storage rm "${RESULTS_FILE_PATH}" || true
 
-      - name: Authenticate with Pulumi Cloud
-        uses: pulumi/auth-actions@v1
-        with:
-          scope: user:TylerHillery
-          organization: TylerHillery 
-          requested-token-type: urn:pulumi:token-type:access_token:personal
-
       - name: Provision Benchmark Infrastructure
         id: pulumi
         uses: pulumi/actions@v6
@@ -74,7 +67,8 @@ jobs:
           work-dir: ./infra
           comment-on-summary: true
           color: always
-          pulumi-version: 3.167.0 
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
       - name: Poll for Benchmark Results
         id: poll-results
