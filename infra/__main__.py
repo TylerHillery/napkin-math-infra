@@ -3,15 +3,18 @@ import sys
 
 import pulumi
 import pulumi_gcp as gcp
+import pulumi_github as github
 
 from config import settings
-from oidc import setup_pulumi_odic
+from oidc import setup_pulumi_oidc, setup_github_oidc
 
 
 if settings.STACK_NAME == "shared":
     gcp_project_config = gcp.organizations.get_project()
     gcp_project_id = gcp_project_config.number
-    setup_pulumi_odic(gcp_project_id)
+
+    setup_pulumi_oidc(gcp_project_id)
+    setup_github_oidc(gcp_project_id)
 
     benchmark_bucket = gcp.storage.Bucket(
         resource_name="benchmark-results-bucket",
@@ -19,7 +22,31 @@ if settings.STACK_NAME == "shared":
         location="US",
         uniform_bucket_level_access=True,
     )
+
     pulumi.export("benchmark_results_bucket_name", benchmark_bucket.name)
+
+    github_secret_gcp_project_name = github.ActionsSecret(
+        "github-actions-secret-gcp-benchmark-bucket-name",
+        secret_name="GCP_BENCHMARK_BUCKET_NAME",
+        repository=settings.GITHUB_REPO,
+        plaintext_value=benchmark_bucket.name,
+    )
+
+    github_secret_gcp_project_name = github.ActionsSecret(
+        "github-actions-secret-gcp-project-name",
+        secret_name="GCP_PROJECT",
+        repository=settings.GITHUB_REPO,
+        plaintext_value=settings.PROJECT_NAME,
+    )
+
+    github_actions_secret_pulumi_token = github.ActionsSecret(
+        "github-actions-secret-pulumi-token",
+        secret_name="PULUMI_ACCESS_TOKEN",
+        repository=settings.GITHUB_REPO,
+        plaintext_value=settings.PULUMI_ACCESS_TOKEN,
+    )
+
+
 
 else:
     module_name = f"benchmarks.{settings.STACK_NAME}"

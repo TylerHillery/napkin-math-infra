@@ -1,0 +1,147 @@
+name: Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      stack_name:
+        description: 'The Pulumi stack name to use for the benchmark'
+        required: true
+        type: choice 
+        options:
+          - libaegis
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./infra
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+            export UV_PROJECT_ENVIRONMENT="${pythonLocation}"
+            uv sync --frozen
+
+      - name: Authenticate with Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT }}
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GH_ACTIONS_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Set up Google Cloud SDK
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      - name: Remove Previous Results File (if any)
+        run: |
+          BUCKET="gs://${{ secrets.GCP_BENCHMARK_BUCKET_NAME }}"
+          STACK_NAME="${{ github.event.inputs.stack_name }}"
+          RESULTS_FILE_PATH="${BUCKET}/${STACK_NAME}/results.txt"
+          echo "Attempting to remove existing results file: ${RESULTS_FILE_PATH}"
+          # Use || true to prevent failure if the file doesn't exist
+          gcloud storage rm "${RESULTS_FILE_PATH}" || true
+
+      - name: Run Benchmark Infrastructure Provisioning
+        id: pulumi-up
+        uses: pulumi/actions@v6
+        with:
+          command: up
+          stack-name: ${{ github.event.inputs.stack_name }}
+          work-dir: ./infra
+          color: always
+          skip-preview: true
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+      - name: Poll for Benchmark Results
+        id: poll-results
+        run: |
+          BUCKET="gs://${{ secrets.GCP_BENCHMARK_BUCKET_NAME }}"
+          STACK_NAME="${{ github.event.inputs.stack_name }}"
+          RESULTS_FILE_PATH="${BUCKET}/${STACK_NAME}/results.txt"
+          TIMEOUT_MINUTES=30
+          POLL_INTERVAL_SECONDS=30
+          MAX_ATTEMPTS=$((TIMEOUT_MINUTES * 60 / POLL_INTERVAL_SECONDS))
+          ATTEMPT=0
+
+          echo "Polling for results file: ${RESULTS_FILE_PATH}"
+          while [[ $ATTEMPT -lt $MAX_ATTEMPTS ]]; do
+            if gcloud storage stat "${RESULTS_FILE_PATH}" &> /dev/null; then
+              echo "Results file found!"
+              echo "::set-output name=results_found::true"
+              exit 0
+            fi
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Attempt ${ATTEMPT}/${MAX_ATTEMPTS}: Results file not found. Waiting ${POLL_INTERVAL_SECONDS}s..."
+            sleep $POLL_INTERVAL_SECONDS
+          done
+
+          echo "Timeout: Results file not found after ${TIMEOUT_MINUTES} minutes."
+          echo "::set-output name=results_found::false"
+          exit 1
+
+      - name: Download Benchmark Results
+        if: steps.poll-results.outputs.results_found == 'true'
+        run: |
+          BUCKET="gs://${{ secrets.GCP_BENCHMARK_BUCKET_NAME }}"
+          STACK_NAME="${{ github.event.inputs.stack_name }}"
+          RESULTS_FILE_PATH="${BUCKET}/${STACK_NAME}/results.txt"
+          LOCAL_RESULTS_FILE="results-${STACK_NAME}.txt"
+          gcloud storage cp "${RESULTS_FILE_PATH}" "${LOCAL_RESULTS_FILE}"
+          echo "Downloaded results to ${LOCAL_RESULTS_FILE}"
+
+      - name: Upload Benchmark Results Artifact
+        if: steps.poll-results.outputs.results_found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.event.inputs.stack_name }}
+          path: results-${{ github.event.inputs.stack_name }}.txt
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: benchmark
+    if: always()
+    defaults:
+      run:
+        working-directory: ./infra
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+            export UV_PROJECT_ENVIRONMENT="${pythonLocation}"
+            uv sync --frozen
+
+      - name: Destroy Pulumi Stack
+        uses: pulumi/actions@v6
+        with:
+          command: destroy
+          stack-name: ${{ github.event.inputs.stack_name }}
+          work-dir: ./infra
+          color: always
+          skip-preview: true
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}

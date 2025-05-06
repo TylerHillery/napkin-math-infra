@@ -8,6 +8,7 @@ class Settings:
 
     github_config: pulumi.Config = pulumi.Config("github")
     GITHUB_USERNAME: str = github_config.get("username") or "TylerHillery"
+    GITHUB_REPO: str = github_config.get("username") or "napkin-math-infra"
     GITHUB_OIDC_ISSUER: str = (
         github_config.get("oidc-issuer")
         or "https://token.actions.githubusercontent.com"
