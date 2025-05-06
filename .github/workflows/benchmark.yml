@@ -81,7 +81,10 @@ jobs:
 
           echo "Polling for results file: ${RESULTS_FILE_PATH}"
           while [[ $ATTEMPT -lt $MAX_ATTEMPTS ]]; do
-            if gcloud storage stat "${RESULTS_FILE_PATH}" &> /dev/null; then
+            GSUTIL_OUTPUT=$(gsutil -q stat "${RESULTS_FILE_PATH}" 2>&1)
+            GSUTIL_EXIT_CODE=$?
+
+            if [[ $GSUTIL_EXIT_CODE -eq 0 ]]; the
               echo "Results file found!"
               echo "::set-output name=results_found::true"
               exit 0
