@@ -104,7 +104,7 @@ jobs:
           BUCKET="gs://${{ secrets.GCP_BENCHMARK_BUCKET_NAME }}"
           STACK_NAME="${{ github.event.inputs.stack_name }}"
           RESULTS_FILE_PATH="${BUCKET}/${STACK_NAME}/results.txt"
-          LOCAL_RESULTS_FILE="results-${STACK_NAME}.txt"
+          LOCAL_RESULTS_FILE="/tmp/results-${STACK_NAME}.txt"
           gcloud storage cp "${RESULTS_FILE_PATH}" "${LOCAL_RESULTS_FILE}"
           echo "Downloaded results to ${LOCAL_RESULTS_FILE}"
 
@@ -113,7 +113,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results-${{ github.event.inputs.stack_name }}
-          path: results-${{ github.event.inputs.stack_name }}.txt
+          path: /tmp/results-${{ github.event.inputs.stack_name }}.txt
 
   cleanup:
     runs-on: ubuntu-latest
