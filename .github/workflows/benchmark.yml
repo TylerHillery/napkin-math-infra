@@ -81,8 +81,8 @@ jobs:
 
           echo "Polling for results file: ${RESULTS_FILE_PATH}"
           while [[ $ATTEMPT -lt $MAX_ATTEMPTS ]]; do
-            GSUTIL_OUTPUT=$(gsutil -q stat "${RESULTS_FILE_PATH}" 2>&1)
-            GSUTIL_EXIT_CODE=$?
+            GSUTIL_EXIT_CODE=0
+            GSUTIL_OUTPUT=$(gsutil -q stat "${RESULTS_FILE_PATH}" 2>&1) || GSUTIL_EXIT_CODE=$?
 
             if [[ $GSUTIL_EXIT_CODE -eq 0 ]]; then
               echo "Results file found!"
