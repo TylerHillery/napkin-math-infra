@@ -67,6 +67,7 @@ jobs:
           work-dir: ./infra
           comment-on-summary: true
           color: always
+          pulumi-version: 3.167.0 
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
