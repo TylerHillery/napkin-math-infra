@@ -58,13 +58,14 @@ jobs:
           # Use || true to prevent failure if the file doesn't exist
           gcloud storage rm "${RESULTS_FILE_PATH}" || true
 
-      - name: Run Benchmark Infrastructure Provisioning
-        id: pulumi-up
+      - name: Provision Benchmark Infrastructure
+        id: pulumi
         uses: pulumi/actions@v6
         with:
           command: up
           stack-name: ${{ github.event.inputs.stack_name }}
           work-dir: ./infra
+          comment-on-summary: true
           color: always
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
@@ -138,13 +139,14 @@ jobs:
             export UV_PROJECT_ENVIRONMENT="${pythonLocation}"
             uv sync --frozen
 
-      - name: Destroy Pulumi Stack
+      - name: Teardown Benchmark Infrastructure
+        id: pulumi
         uses: pulumi/actions@v6
         with:
           command: destroy
           stack-name: ${{ github.event.inputs.stack_name }}
           work-dir: ./infra
+          comment-on-summary: true
           color: always
-          skip-preview: true
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
