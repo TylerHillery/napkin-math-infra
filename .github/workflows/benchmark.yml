@@ -10,6 +10,10 @@ on:
         options:
           - libaegis
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   benchmark:
     runs-on: ubuntu-latest
